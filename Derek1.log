@@ -1,0 +1,465 @@
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/abhijit/ARAASTAT/Newcomer/Derek1.log
+  log type:  text
+ opened on:  24 Jun 2016, 14:10:16
+
+. 
+. egen v_mean = rmean(lower*velocity middle*velocity upper*velocity)
+(110 missing values generated)
+
+. 
+. gen velo_transformed = v_mean *22.5*22.5/144
+(110 missing values generated)
+
+. 
+. gen A = (velo_transformed + balometerintake)/2
+(286 missing values generated)
+
+. gen M = (velo_transformed - balometerintake)
+(286 missing values generated)
+
+. 
+. twoway scatter M A
+
+. 
+. foreach var of varlist lower*velocity middle*velocity upper*velocity {
+  2.         gen `var'_transformed = `var' * 22.5*22.5/144
+  3. }
+(125 missing values generated)
+(125 missing values generated)
+(125 missing values generated)
+(110 missing values generated)
+(125 missing values generated)
+(125 missing values generated)
+(125 missing values generated)
+(125 missing values generated)
+(125 missing values generated)
+
+. gen velo_transformed = v_mean *22.5*22.5/144
+variable velo_transformed already defined
+r(110);
+
+end of do-file
+
+r(110);
+
+. do "/var/folders/_z/3_rk16_97y9_67_r9w4k37y40000gn/T//SD57375.000000"
+
+. gen velo_transformed = v_mean *22.5*22.5/144
+variable velo_transformed already defined
+r(110);
+
+end of do-file
+
+r(110);
+
+. twoway scatter lowercentervelocity_transformed-balometerintake (lowercentervelocity_transformed +balometerintake)/2
+variables out of order
+r(111);
+
+. do "/var/folders/_z/3_rk16_97y9_67_r9w4k37y40000gn/T//SD57375.000000"
+
+. replace A = (lowercentervelocity_transformed + balometerintake)/2
+(68 real changes made)
+
+. replace M = (lowercentervelocity_transformed - balometerintake)
+(68 real changes made)
+
+. 
+. twoway scatter M A
+
+. 
+end of do-file
+
+. histogram balometerintake 
+(bin=13, start=310, width=124)
+
+. histogram velo_transformed 
+(bin=15, start=329.6875, width=247.55208)
+
+. help rmean
+
+. egen v_median = median(lower*velocity middle*velocity upper*velocity)
+lower ambiguous abbreviation
+r(111);
+
+. egen v_median = rmedian(lower*velocity middle*velocity upper*velocity)
+unknown egen function rmedian()
+r(133);
+
+. egen v_median = rowmedian(lower*velocity middle*velocity upper*velocity)
+(110 missing values generated)
+
+. histogram v_median
+(bin=15, start=99, width=70.066667)
+
+. summ v_median
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+    v_median |        244    425.7459    229.7966         99       1150
+
+. summ v_mean
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+      v_mean |        244    425.8327    228.5911   93.77778       1150
+
+. gen v_median_transformed = v_median * 22.5*22.5/144
+(110 missing values generated)
+
+. twoway scatter v_median_transformed balometerintake 
+
+. reg v_median_transformed balometerintake 
+
+      Source |       SS           df       MS      Number of obs   =        68
+-------------+----------------------------------   F(1, 66)        =    368.83
+       Model |  17524364.2         1  17524364.2   Prob > F        =    0.0000
+    Residual |  3135910.27        66   47513.792   R-squared       =    0.8482
+-------------+----------------------------------   Adj R-squared   =    0.8459
+       Total |  20660274.5        67  308362.305   Root MSE        =    217.98
+
+---------------------------------------------------------------------------------
+v_median_tran~d |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+----------------+----------------------------------------------------------------
+balometerintake |    1.57471   .0819954    19.20   0.000     1.411001    1.738419
+          _cons |   3.061327   118.5639     0.03   0.979    -233.6591    239.7818
+---------------------------------------------------------------------------------
+
+. reg v_median balometerintake 
+
+      Source |       SS           df       MS      Number of obs   =        68
+-------------+----------------------------------   F(1, 66)        =    368.83
+       Model |  1417872.51         1  1417872.51   Prob > F        =    0.0000
+    Residual |  253722.241        66  3844.27638   R-squared       =    0.8482
+-------------+----------------------------------   Adj R-squared   =    0.8459
+       Total |  1671594.75        67  24949.1754   Root MSE        =    62.002
+
+---------------------------------------------------------------------------------
+       v_median |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+----------------+----------------------------------------------------------------
+balometerintake |   .4479175   .0233231    19.20   0.000     .4013514    .4944836
+          _cons |   .8707774   33.72484     0.03   0.979    -66.46304     68.2046
+---------------------------------------------------------------------------------
+
+. 22.5*22.5/144
+22.5 is not a valid command name
+r(199);
+
+. summ lowercentervelocity 
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+lowercente~y |        229    395.6725    206.0392        100        928
+
+. summ balometerintake 
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+balometeri~e |        177    1171.401    400.3094        310       1922
+
+. gen test = balometerintake/ v_mean 
+variable test already defined
+r(110);
+
+. gen blah = balometerintake / v_mean 
+(286 missing values generated)
+
+. summ blah
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+        blah |         68    2.261078    .2812776   1.816024   3.702703
+
+. drop blah
+
+. gen blah = rowsum(0.4*lower*velocity)
+unknown function rowsum()
+r(133);
+
+. egen blah = rowsum(0.4*(lower*velocity))
+unknown egen function rowsum()
+r(133);
+
+. egen blah = rowtotal(0.4*(lower*velocity))
+factor variables and time-series operators not allowed
+r(101);
+
+. twoway scatter blah v_mean
+variable blah not found
+r(111);
+
+. egen blah = 0.4*rowtotal(lower*velocity middle*velocity upper*velocity)
+unknown egen function 0.4*rowtotal()
+r(133);
+
+. egen blah = rowtotal(lower*velocity middle*velocity upper*velocity)
+
+. replace blah = 0.4*blah
+(244 real changes made)
+
+. twoway scatter blah v_mean
+
+. twoway scatter blah balometerintake 
+
+. hist blah
+(bin=18, start=0, width=176.11111)
+
+. summ v_mean
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+      v_mean |        244    425.8327    228.5911   93.77778       1150
+
+. codebook v_mean
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+v_mean                                                                                                                                                               (unlabeled)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                  type:  numeric (float)
+
+                 range:  [93.777779,1150]             units:  1.000e-06
+         unique values:  233                      missing .:  110/354
+
+                  mean:   425.833
+              std. dev:   228.591
+
+           percentiles:        10%       25%       50%       75%       90%
+                           186.444   241.722     349.5   607.778   756.111
+
+. codebook blah
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+blah                                                                                                                                                                 (unlabeled)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                  type:  numeric (float)
+
+                 range:  [0,3170]                     units:  .1
+         unique values:  235                      missing .:  0/354
+
+                  mean:   967.847
+              std. dev:   929.655
+
+           percentiles:        10%       25%       50%       75%       90%
+                                 0         0     833.8    1672.4    2551.2
+
+. drop blah
+
+. egen blah = rowtotal(lower*velocity middle*velocity upper*velocity)
+
+. codebook blah
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+blah                                                                                                                                                                 (unlabeled)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                  type:  numeric (float)
+
+                 range:  [0,7925]                     units:  .1
+         unique values:  235                      missing .:  0/354
+
+                  mean:   2419.62
+              std. dev:   2324.14
+
+           percentiles:        10%       25%       50%       75%       90%
+                                 0         0    2084.5      4181      6378
+
+. replace blah = 0.4*blah
+(244 real changes made)
+
+. codebook blah
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+blah                                                                                                                                                                 (unlabeled)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                  type:  numeric (float)
+
+                 range:  [0,3170]                     units:  .1
+         unique values:  235                      missing .:  0/354
+
+                  mean:   967.847
+              std. dev:   929.655
+
+           percentiles:        10%       25%       50%       75%       90%
+                                 0         0     833.8    1672.4    2551.2
+
+. codebook balometerintake 
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+balometerintake                                                                                                                                                 balometer intake
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                  type:  numeric (int)
+
+                 range:  [310,1922]                   units:  1
+         unique values:  135                      missing .:  177/354
+
+                  mean:    1171.4
+              std. dev:   400.309
+
+           percentiles:        10%       25%       50%       75%       90%
+                               550       865      1200      1500      1650
+
+. summ lowercentervelocity 
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+lowercente~y |        229    395.6725    206.0392        100        928
+
+. summ lowerleftvelocity 
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+lowerleftv~y |        229    415.1769    223.3005         66        949
+
+. summ lowerrightvelocity 
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+lowerright~y |        229    411.2838     220.519         35        910
+
+. gen blah2 = balometerintake / 3.6
+(177 missing values generated)
+
+. summ blah2
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       blah2 |        177    325.3892    111.1971   86.11111   533.8889
+
+. summ v_mean
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+      v_mean |        244    425.8327    228.5911   93.77778       1150
+
+. twoway scatter v_mean blah2
+
+. gen f = v_mean / blah2
+(286 missing values generated)
+
+. summ f
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+           f |         68    1.610179    .1511538   .9722628   1.982353
+
+. reg v_mean blah2
+
+      Source |       SS           df       MS      Number of obs   =        68
+-------------+----------------------------------   F(1, 66)        =    386.36
+       Model |  1364773.16         1  1364773.16   Prob > F        =    0.0000
+    Residual |  233140.314        66    3532.429   R-squared       =    0.8541
+-------------+----------------------------------   Adj R-squared   =    0.8519
+       Total |  1597913.48        67  23849.4549   Root MSE        =    59.434
+
+------------------------------------------------------------------------------
+      v_mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       blah2 |   1.582021   .0804857    19.66   0.000     1.421326    1.742716
+       _cons |   11.34539   32.32804     0.35   0.727    -53.19962     75.8904
+------------------------------------------------------------------------------
+
+. reg blah balometerintake 
+
+      Source |       SS           df       MS      Number of obs   =       177
+-------------+----------------------------------   F(1, 175)       =     92.03
+       Model |  81557299.3         1  81557299.3   Prob > F        =    0.0000
+    Residual |   155092936       175  886245.349   R-squared       =    0.3446
+-------------+----------------------------------   Adj R-squared   =    0.3409
+       Total |   236650235       176  1344603.61   Root MSE        =    941.41
+
+---------------------------------------------------------------------------------
+           blah |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+----------------+----------------------------------------------------------------
+balometerintake |    1.70051   .1772658     9.59   0.000     1.350656    2.050364
+          _cons |  -1119.566   219.3747    -5.10   0.000    -1552.527   -686.6056
+---------------------------------------------------------------------------------
+
+. twoway scatter balometerintake blah
+
+. reg velo_transformed balometerintake 
+
+      Source |       SS           df       MS      Number of obs   =        68
+-------------+----------------------------------   F(1, 66)        =    386.36
+       Model |  16868076.8         1  16868076.8   Prob > F        =    0.0000
+    Residual |  2881525.48        66   43659.477   R-squared       =    0.8541
+-------------+----------------------------------   Adj R-squared   =    0.8519
+       Total |  19749602.3        67  294770.184   Root MSE        =    208.95
+
+---------------------------------------------------------------------------------
+velo_transfor~d |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+----------------+----------------------------------------------------------------
+balometerintake |   1.544942   .0785993    19.66   0.000     1.388014    1.701871
+          _cons |    39.8861   113.6533     0.35   0.727    -187.0299    266.8022
+---------------------------------------------------------------------------------
+
+. twoway velo_transformed balometerintake 
+velo_transformed is not a twoway plot type
+r(198);
+
+. twoway scatter velo_transformed balometerintake 
+
+. do "/var/folders/_z/3_rk16_97y9_67_r9w4k37y40000gn/T//SD57375.000000"
+
+. gen A = (velo_transformed + balometerintake)/2
+variable A already defined
+r(110);
+
+end of do-file
+
+r(110);
+
+. drop M A
+
+. do "/var/folders/_z/3_rk16_97y9_67_r9w4k37y40000gn/T//SD57375.000000"
+
+. gen A = (velo_transformed + balometerintake)/2
+(286 missing values generated)
+
+. gen M = (velo_transformed - balometerintake)
+(286 missing values generated)
+
+. 
+. twoway scatter M A
+
+. 
+end of do-file
+
+. gen log_velo = log(velo_transformed 
+too few ')' or ']'
+r(132);
+
+. gen log_velo = log(velo_transformed)
+(110 missing values generated)
+
+. gen log_balo = log(balometerintake)
+(177 missing values generated)
+
+. drop M A
+
+. gen M = log_velo - log_balo
+(286 missing values generated)
+
+. gen A = (log_velo+log_balo)/2
+(286 missing values generated)
+
+. twoway scatter M A
+
+. twoway scatter M A
+
+. gen M1 = velo_transformed - balometerintake 
+(286 missing values generated)
+
+. gen A1 = (velo_transformed + balometerintake)/2
+(286 missing values generated)
+
+. twoway scatter M1 A1
+
+. twoway scatter M A
+
+. exit, clear
