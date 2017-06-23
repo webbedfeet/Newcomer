@@ -36,16 +36,6 @@ cumsum(table(9-apply(bl>=99.97,1,sum)))
 bl <- study_dat %>% filter(effect >= 99, effect < 99.9) %>% select(matches('^effect[1-9]'))
 cumsum(table(9-apply(bl>=99.97,1,sum)))
 
-balo_effects <- study_dat %>% select(matches('^effect[1-9]')) %>%
-  gather(sector, value, -effect5) %>%
-  bind_rows(data.frame(effect5 = study_dat$effect5,
-                   sector = 'effect5',
-                   value = study_dat$effect5))
-
-ggplot(balo_effects[-244,], aes(x=effect5+value, y = value-effect5))+
-  geom_point()+geom_smooth(se=F)+
-  facet_wrap(~sector, nrow=3)+
-  geom_hline(yintercept=0)
 
 effects = study_dat %>% select(matches('^effect[1-9]'))
 blah=as_data_frame(apply(t(apply(as_data_frame(-effects),1, rank, ties.method='min')),2, table))
@@ -63,191 +53,43 @@ study_dat %>% filter(ind) %>%  select(matches('^effect[1-9]')) %>%
   geom_point()+ geom_smooth(se=F)+
   facet_wrap(~sector, nrow=3)
 
-tst <- study_dat %>% select(matches('^effect[1-9]'))
-
-
-# Bland-Altman Analysis
-
-x <- dat$balometerintake
-y <- dat$intakevolume
-
-blah = tibble(x,y)
-blah = blah[complete.cases(blah),]
-blah <- blah %>% mutate(M = y-x,
-                        A = (y+x)/2,
-                        M2 = (y-x)/x)
-plot(M2~A, data=blah)
-SD = sd(blah$M2)
-Mean = mean(blah$M2)
-abline(h=Mean)
-abline(h = c(Mean+2*SD, Mean - 2*SD), lty=2)
-
-ggplot(blah, aes(x=A, y = M2))+geom_point()+
-  geom_hline(yintercept = c(Mean, Mean - 2*SD, Mean + 2*SD),
-             linetype = c(1,2,2))+
-  labs(x = 'Average', y = 'Proportional difference')+
-  theme_bw()
-
-# Find observation right after filter change
-
-bl <- plyr::ddply(dat, ~unitnumber, function(m){
-  if(!is.na(unique(m$unit_number_informationfilter))){
-    tst = ifelse(m$date>m$unit_number_informationfilter,1,0)
-    rnd = min(m$roundnumber[tst==1])
-    return(data.frame(filterchange = unique(m$unit_number_informationfilter), freshround = rnd))
-  } else {
-    return(data.frame(filterchange=NA, freshround=NA))
-  }
-})
-
-bl2 = bl %>% dplyr::filter(!is.na(freshround), freshround<Inf)
-freshdat = list()
-for(i in 1:nrow(bl2)){
-  freshdat[[i]] <- dat[dat$unitnumber==bl2[i,'unitnumber'] & dat$roundnumber == bl2[i,'freshround'],]
-}
-freshdat = do.call(rbind, freshdat)
-freshdat <- plyr::ddply(freshdat, ~unitnumber, function(m) m[m$date==min(m$date),])
-
-dirtydat = list()
-for (i in 1:nrow(freshdat)){
-  dirtydat[[i]] <- dat[dat$unitnumber==freshdat[i,'unitnumber'] & dat$roundnumber == freshdat[i,'roundnumber']-1,]
-}
-dirtydat = do.call(rbind, dirtydat)
-freshdat2 = freshdat[freshdat$unitnumber %in% dirtydat$unitnumber,]
-
-## Create indicator for which rows are the first test post filter change.
-
-
-
-# keep unit 51 round 7 location BUILDING 10/11TH FLOOR
-#
-
-library(reshape2)
-dat_expt = dat %>% dplyr::filter(unitnumber!=2, unitnumber!=3)
-blah = dat_expt %>% select(ends_with('velocity'),mfg)
-blah = blah[,-1]
-blah2 = melt(blah, id.vars = c('mfg','middlecentervelocity'))
-ggplot(blah2, aes(x=middlecentervelocity, y=value))+geom_point()+geom_smooth()+geom_abline(color='red')+facet_wrap(~variable, nrow=2)
-
-ggplot(blah2,
-       aes(x=(middlecentervelocity+value)/2, y=(value-middlecentervelocity)))+
-  geom_point()+
-  geom_smooth()+
-  geom_hline(yintercept=0, color='red')+
-  facet_wrap(~variable, nrow=2)+
-  labs(x='Average velocity', y = 'Difference from middlecenter')
-
-# Capture effectiveness
-
-ce <- dat_expt %>% select(starts_with('effect'), -effectless90, roundnumber, unitnumber)
-ce1 <- ce %>% select(-roundnumber, -unitnumber) %>% mutate_each(funs(ifelse(.>99.97,1,0)))
-no_of_cells_pass <- apply(ce1[,2:10],1,sum)
-
-cutoff = list()
-for(cr in c(90,95, 97.5, 99, 99.5, 99.7, 99.9, 99.95, 99.97)){
-  cutoff = c(cutoff, c(cr, 100*mean(ce$effect>=cr, na.rm=T)))
-}
-
-cutoff = data.frame(matrix(do.call(c, cutoff), ncol=2, byrow=T))
-names(cutoff) <- c('Threshold','Percent_passing')
-ggplot(cutoff, aes(Threshold, Percent_passing))+
-  geom_line()+
-  labs(y='Percent passing')
-
-passing = matrix(NA, nrow=84, ncol=9)
-units = sort(unique(dat_expt$unitnumber))
-for(i in 1:nrow(dat_expt)){
-  unit_index = match(dat_expt$unitnumber[i], units)
-  passing[unit_index, dat_expt$roundnumber[i]] <- ifelse(dat_expt$effect[i]>99.97, 1, 0)
-}
 
 ## How many sectors can fail
 ## How much can they fail by
 ## Which ones can fail
 
-n <- dat_expt %>% select(starts_with('effectivenessquad')) %>% names() %>% sort()
-corrs <- dat_expt[,n] %>% cor(use='pair') %>% round(digit=2)
-image(corrs)
-
-dat_effective <- dat_expt %>% select(starts_with('effectiveness'))
-dat_effective <- dat_effective[,sort(names(dat_effective))]
-
 meet_criterion <- function(x, crit=99.97){
   x %>% mutate_each(funs(ifelse(.>crit, 1, 0)))
 }
 
-crit_levels = c(90,95, 97.5, 99, 99.5, 99.7, 99.9, 99.95, 99.97)
-out = list()
-for(cr in crit_levels){
-  cr_dat <- meet_criterion(dat_effective, crit=cr)
-  bl = melt(cr_dat, id.var=1)
-  out[[as.character(cr)]] <- bl %>% dplyr::filter(effectiveness==1) %>% group_by(variable) %>%
-    summarise(prop_fail = 100*mean(1-value, na.rm=T))
-}
+# crit_levels = c(90,95, 97.5, 99, 99.5, 99.7, 99.9, 99.95, 99.97)
+# out = list()
+# for(cr in crit_levels){
+#   cr_dat <- meet_criterion(effects, crit=cr)
+#   bl = reshape2::melt(cr_dat, id.var=1)
+#   out[[as.character(cr)]] <- bl %>% dplyr::filter(effect >= 99.97) %>% group_by(variable) %>%
+#     summarise(prop_fail = 100*mean(1-value, na.rm=T))
+# }
+#
+# blah = plyr::ldply(out) %>% mutate(crit = as.numeric(.id))
+# ggplot(blah, aes(x=crit, y = prop_fail))+geom_line()+
+#   facet_wrap(~variable, nrow=3)+
+#   labs(x = 'Failure criterion', y = "Proportion of time sector fails when overall passes")
+#
+# cr_dat <- meet_criterion(dat_effective, crit=99.9)
+# number_fail <- 9-apply(cr_dat[,-1],1, sum,na.rm=T)
+# table(number_fail[cr_dat[,1]==1])
+# apply(cr_dat[cr_dat[,1]==1 & number_fail==3,],1, function(x) which(x==0))-1
 
-blah = plyr::ldply(out) %>% mutate(crit = as.numeric(.id))
-ggplot(blah, aes(x=crit, y = prop_fail))+geom_line()+
-  facet_wrap(~variable, nrow=3)+
-  labs(x = 'Failure criterion', y = "Proportion of time sector fails when overall passes")
-
-cr_dat <- meet_criterion(dat_effective, crit=99.9)
-number_fail <- 9-apply(cr_dat[,-1],1, sum,na.rm=T)
-table(number_fail[cr_dat[,1]==1])
-apply(cr_dat[cr_dat[,1]==1 & number_fail==3,],1, function(x) which(x==0))-1
-
-library(tidyr)
-library(reshape2)
-dat_effective <- mutate(dat_effective, ind_effect = ifelse(effectiveness>=99.97,1,0))
-howmuch_pass <- dat_effective %>% dplyr::filter(ind_effect==1) %>%
+library(tidyverse)
+study_dat<- mutate(study_dat, ind_effect = ifelse(effect>=99.97,1,0))
+howmuch_pass <-study_dat %>% dplyr::filter(ind_effect==1) %>%
   summarise_each(funs(min = min(., na.rm=T)),
-                 contains('quad')) %>% melt %>%
-  mutate(quad = gsub('_min','',variable),
-         min = value) %>%
-  select(-variable,-value)
+                 matches('^effect[1-9]')) %>%
+  gather(variable, value) %>%
+  separate(variable, c('sector','fn')) %>%
+  select(-fn)
 
-dat_effective$pos <- apply(dat_effective[,2:10], 1, function(x) ifelse(any(x<=0),0,1))
-d <- dat_effective %>% mutate(id = 1:nrow(.)) %>% dplyr::filter(ind_effect==0, pos==1)
-rng <- data.frame(t(apply(d[,2:10],1,range))); names(rng) <- c('min','max')
-rng$id <- 1:nrow(rng)
-
-plt <- ggplot(rng, aes(x=id, ymin=min, ymax=max))+geom_linerange()+
-  geom_hline(yintercept=99.97, linetype=2)
-plt
-plt+ylim(99.5,100)
-plt+ylim(99.9,100)
-
-bl <- dat_effective %>% filter(effectiveness >= 99.97) %>%
-  summarise_each(funs(round(100*mean(.>99.97 , na.rm=T),2)), -effectiveness) %>%
-  matrix(nrow=3, byrow=T)
-bl <- dat_effective %>% filter(effectiveness >= 99.97) %>%
-  summarise_each(funs(round(min(. , na.rm=T),2)), -effectiveness) %>%
-  matrix(nrow=3, byrow=T)
-
-
-ind <- apply(dat_effective[,2:10], 1, function(x) all(x>0))
-dat_effective <- dat_effective[ind,]
-
-apply(subset(dat_effective, ind_effect==0)[,2:10],1,range)
-
-
-d2 <- d %>% filter(effectiveness > 99.5 & effectiveness < 99.97)
-quad_summary <- function(d2) {
-  out <- d2 %>% summarise_each(funs(n = n(),mean = mean(., na.rm=T), median = median(., na.rm=T),
-                             min = min(., na.rm=T), max = max(., na.rm=T),
-                             Q25 = quantile(.,.25,na.rm=T),
-                             Q10 = quantile(.,.1,na.rm=T)), contains('quad'))
-  out %>% melt %>% separate(variable,c('quad','stat')) %>%
-    mutate(value = round(value,2)) %>% spread(stat,value)
-}
-
-quad_pass <- function(d2){
-  out <- d2 %>% summarise_each(funs(mean = mean(. > 99.97, na.rm=T)), contains('quad'))
-  out %>% melt %>% mutate(value=round(100*value,2)) %>%
-    separate(variable,c('quad','stat')) %>% spread(stat,value)
-}
-
-out <- quad_summary(d %>% filter(effectiveness > 99.5))
-out2 <- quad_summary(d %>% filter(effectiveness > 99.9))
 
 obs_summ <- function(d){
   x <- t(apply(d[,3:11],1, function(x) c(range(x), mean(x), median(x),
@@ -299,7 +141,7 @@ measures_2x2 <- function(d){
 
 measures_2x2(table(dat_effective$effectiveness >= 99.97, dat_effective$effectivenessquad5>=99.97))
 
-number_positive <- apply(meet_criterion(dat_effective) %>% select(contains('quad')),1,sum)
+number_positive <- apply(meet_criterion(effects) ,1,sum)
 
 oc <- data.frame(rbind(
 measures_2x2(table(study_dat$effect >=99.97, number_positive>=5)),
@@ -316,18 +158,29 @@ measures_2x2(table(
 
 library(ROCR)
 
-p1 <- prediction(obs_summ(dat_effective)$min/101, dat_effective$ind_effect)
+p1 <- prediction(obs_summ(study_dat)$min/101, study_dat$ind_effect)
 perf=performance(p1, 'tpr','fpr')
 plot(perf)
 opt_cut <- perf@alpha.values[[1]][which.max(perf@y.values[[1]]-perf@x.values[[1]])] # 98.85
 performance(p1,'auc')
 
 measures_2x2(table(
-  dat_effective$ind_effect==1,
-  obs_summ(dat_effective)$min > opt_cut*100))
+  study_dat$ind_effect==1,
+  obs_summ(study_dat)$min > .9983*100))
+
+PPV <- rep(0,1001)
+NPV <- rep(0,1001)
+for(i in 1:1002){
+  if(i %% 100 == 0) print(i)
+  m = measures_2x2(table(
+    study_dat$ind_effect==1,
+    obs_summ(study_dat)$min > opt_cut*100))
+  PPV[i] <- m['PPV']
+  NPV[i] <- m['NPV']
+}
 
 measures_2x2(table(
-  dat_effective$ind_effect==1,
+  study_dat$ind_effect==1,
   obs_summ(dat_effective)$min > opt_cut*100 & dat_effective$effectivenessquad5 > 99.97))
 
 measures_2x2(table(
@@ -335,16 +188,24 @@ measures_2x2(table(
   obs_summ(dat_effective)$min > opt_cut*100 & dat_effective$effectivenessquad5>99.97 & number_positive>=7))
 
 ## Combined test
-tst1 <- obs_summ(dat_effective)$min > opt_cut*100 & dat_effective$effectivenessquad5>=99.97 & number_positive >=7
-table(tst1, dat_effective$ind_effect)
-measures_2x2(table(dat_effective$ind_effect,tst1))
+mins = obs_summ(study_dat)$min
+tst = ifelse(study_dat$effect5 >= 99.97, 1, 0)
+tst <- ifelse(tst==1 & mins > 0.998*100, 1,0)
+tst <- ifelse(tst==1 & number_positive >=7, 1,0)
+tst <- ifelse(tst)
+tst1 <- obs_summ(study_dat)$min > .995*100 &
+  study_dat$effect5 >= 99.97# & number_positive >=7
+table(tst1, study_dat$ind_effect)
+measures_2x2(table(study_dat$ind_effect,tst))
 
 d_test <- dat_effective %>% filter(effectivenessquad5>=99.97)
 d_test$num_pos <- number_positive[dat_effective$effectivenessquad5>=99.97]
 
 measures_2x2(table(
-  d_test$ind_effect==1,
-  obs_summ(d_test)$min > opt_cut*100))
+ study_dat$ind_effect==1,
+  obs_summ(study_dat)$min > .998*100 & study_dat$effect5>99.97))
+
+measures_2x2(table(study_dat$ind_effect, number_positive>6))
 
 d_test2 <- d_test[obs_summ(d_test)$min > opt_cut*100,]
 measures_2x2(table(
